@@ -8,10 +8,12 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "joblib>=1.5.3",
     "lxml>=6.1.0",
     "pandas>=3.0.2",
     "pyarrow>=24.0.0",
     "requests>=2.33.1",
+    "scikit-learn>=1.8.0",
 ]
 
 [project.scripts]
