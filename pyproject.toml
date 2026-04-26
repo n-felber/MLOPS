@@ -18,6 +18,8 @@ dependencies = [
 
 [project.scripts]
 highjump-mlops = "highjump_mlops:main"
+feature-pipeline = "highjump_mlops.feature_pipeline:main"
+train-pipeline = "highjump_mlops.train_pipeline:main"
 
 [build-system]
 requires = ["uv_build>=0.11.7,<0.12.0"]
