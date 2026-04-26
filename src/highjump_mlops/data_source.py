@@ -1,3 +1,4 @@
+import re
 from io import StringIO
 
 import pandas as pd
@@ -6,14 +7,28 @@ import requests
 from highjump_mlops.config import toplist_url
 
 
-def fetch_html(year: int) -> str:
+def fetch_html(year: int, page: int) -> str:
     response = requests.get(
-        toplist_url(year),
+        toplist_url(year, page),
         headers={"User-Agent": "Mozilla/5.0"},
         timeout=30,
     )
     response.raise_for_status()
     return response.text
+
+
+def find_last_page(html: str) -> int:
+    data_max_values = re.findall(r'data-max="(\d+)"', html)
+
+    if data_max_values:
+        return max(int(value) for value in data_max_values)
+
+    data_page_values = re.findall(r'data-page="(\d+)"', html)
+
+    if data_page_values:
+        return max(int(value) for value in data_page_values)
+
+    return 1
 
 
 def parse_toplist(html: str, year: int) -> pd.DataFrame:

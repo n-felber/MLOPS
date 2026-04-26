@@ -9,5 +9,6 @@ RUN pip install --no-cache-dir uv
 RUN uv sync --frozen --no-dev
 
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
 
 CMD ["feature-pipeline"]

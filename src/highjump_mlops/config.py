@@ -8,8 +8,8 @@ FEATURES_PATH = Path("data/features/highjump_features.parquet")
 MODEL_PATH = Path("models/highjump_model.joblib")
 
 
-def toplist_url(year: int) -> str:
+def toplist_url(year: int, page: int) -> str:
     return (
         "https://worldathletics.org/records/toplists/jumps/high-jump/"
-        f"outdoor/men/senior/{year}"
+        f"outdoor/men/senior/{year}?page={page}"
     )
