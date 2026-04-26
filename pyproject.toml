@@ -7,7 +7,12 @@ authors = [
     { name = "Noé Felber", email = "noe.felber@gmx.ch" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "lxml>=6.1.0",
+    "pandas>=3.0.2",
+    "pyarrow>=24.0.0",
+    "requests>=2.33.1",
+]
 
 [project.scripts]
 highjump-mlops = "highjump_mlops:main"
