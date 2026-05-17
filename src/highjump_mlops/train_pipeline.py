@@ -13,8 +13,12 @@ FEATURE_COLUMNS = [
     "season_rank",
     "season_best",
     "results_score",
+    "season_result_count",
     "previous_season_best",
+    "previous_season_rank",
     "previous_results_score",
+    "recent_3_season_best_mean",
+    "recent_3_season_best_median",
     "performance_change",
 ]
 
