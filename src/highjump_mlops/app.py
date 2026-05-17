@@ -217,3 +217,26 @@ st.dataframe(
     width="stretch",
     hide_index=True,
 )
+
+
+st.markdown("## Model evaluation")
+
+metrics = prediction.get("metrics", {})
+
+metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+
+with metric_col1:
+    mae = metrics.get("mae")
+    st.metric("MAE", "N/A" if mae is None else f"{mae:.3f} m")
+
+with metric_col2:
+    rmse = metrics.get("rmse")
+    st.metric("RMSE", "N/A" if rmse is None else f"{rmse:.3f} m")
+
+with metric_col3:
+    training_rows = metrics.get("training_rows")
+    st.metric("Training rows", "N/A" if training_rows is None else training_rows)
+
+with metric_col4:
+    test_rows = metrics.get("test_rows")
+    st.metric("Test rows", "N/A" if test_rows is None else test_rows)

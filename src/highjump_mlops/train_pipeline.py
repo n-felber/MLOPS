@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import joblib
 import pandas as pd
@@ -33,7 +34,7 @@ def load_training_data() -> pd.DataFrame:
     return df
 
 
-def train_model(df: pd.DataFrame) -> LinearRegression:
+def train_model(df: pd.DataFrame) -> tuple[LinearRegression, dict[str, Any]]:
     train_df = df[df["year"] <= 2023]
     test_df = df[df["year"] >= 2024]
 
@@ -51,20 +52,29 @@ def train_model(df: pd.DataFrame) -> LinearRegression:
     mae = mean_absolute_error(y_test, predictions)
     rmse = root_mean_squared_error(y_test, predictions)
 
-    print(f"Training rows: {len(train_df)}")
-    print(f"Test rows: {len(test_df)}")
-    print(f"MAE: {mae:.3f} m")
-    print(f"RMSE: {rmse:.3f} m")
+    metrics = {
+        "mae": float(mae),
+        "rmse": float(rmse),
+        "training_rows": int(len(train_df)),
+        "test_rows": int(len(test_df)),
+    }
 
-    return model
+    print(f"Training rows: {metrics['training_rows']}")
+    print(f"Test rows: {metrics['test_rows']}")
+    print(f"MAE: {metrics['mae']:.3f} m")
+    print(f"RMSE: {metrics['rmse']:.3f} m")
+
+    return model, metrics
 
 
-def save_model(model: LinearRegression) -> None:
+def save_model(model: LinearRegression, metrics: dict[str, Any]) -> None:
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     model_package = {
         "model": model,
         "feature_columns": FEATURE_COLUMNS,
+        "metrics": metrics,
+        "target_column": TARGET_COLUMN,
     }
 
     joblib.dump(model_package, MODEL_PATH)
@@ -74,8 +84,8 @@ def save_model(model: LinearRegression) -> None:
 
 def main() -> None:
     df = load_training_data()
-    model = train_model(df)
-    save_model(model)
+    model, metrics = train_model(df)
+    save_model(model, metrics)
 
 
 if __name__ == "__main__":

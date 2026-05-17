@@ -146,6 +146,7 @@ def predict_for_athlete(athlete: str, features_path: Path = FEATURES_PATH, model
             else float(latest_row["performance_change"])
         ),
         "days_since_season_best": int(latest_row["days_since_season_best"]),
+        "metrics": package.get("metrics", {}),
     }
 
 
