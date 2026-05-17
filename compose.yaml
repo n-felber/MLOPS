@@ -1,0 +1,35 @@
+services:
+  features:
+    build: .
+    image: highjump-mlops
+    volumes:
+      - ./data:/app/data
+    command: feature-pipeline
+
+  train:
+    build: .
+    image: highjump-mlops
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    command: train-pipeline
+
+  inference:
+    build: .
+    image: highjump-mlops
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    environment:
+      ATHLETE: ${ATHLETE:-Mutaz Essa BARSHIM}
+    command: sh -c 'python -m highjump_mlops.inference "$$ATHLETE"'
+
+  ui:
+    build: .
+    image: highjump-mlops
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    command: streamlit run src/highjump_mlops/app.py --server.address=0.0.0.0 --server.port=8501
