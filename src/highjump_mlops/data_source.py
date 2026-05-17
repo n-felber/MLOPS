@@ -1,10 +1,19 @@
+import random
 import re
+import time
 from io import StringIO
 
 import pandas as pd
 import requests
 
 from highjump_mlops.config import toplist_url
+
+
+REQUEST_DELAY_SECONDS = (0.7, 2.4)
+
+
+def wait_between_requests() -> None:
+    time.sleep(random.uniform(*REQUEST_DELAY_SECONDS))
 
 
 def fetch_html(year: int, page: int) -> str:
@@ -14,6 +23,9 @@ def fetch_html(year: int, page: int) -> str:
         timeout=30,
     )
     response.raise_for_status()
+
+    wait_between_requests()
+
     return response.text
 
 
@@ -31,11 +43,16 @@ def find_last_page(html: str) -> int:
     return 1
 
 
-def parse_toplist(html: str, year: int) -> pd.DataFrame:
-    tables = pd.read_html(StringIO(html))
+def parse_toplist(html: str, year: int, page: int) -> pd.DataFrame:
+    try:
+        tables = pd.read_html(StringIO(html))
+    except ValueError:
+        print(f"Could not parse table for {year} page {page}", flush=True)
+        return pd.DataFrame()
 
     if not tables:
-        raise RuntimeError(f"No tables found for {year}.")
+        print(f"No tables found for {year} page {page}", flush=True)
+        return pd.DataFrame()
 
     df = tables[0]
     df.columns = [str(column).strip().lower().replace(" ", "_") for column in df.columns]
