@@ -1,7 +1,11 @@
+from datetime import date
 from pathlib import Path
 
 
-YEARS = [2021, 2022, 2023, 2024, 2025, 2026]
+YEARS_BACK = 6
+CURRENT_YEAR = date.today().year
+START_YEAR = CURRENT_YEAR - YEARS_BACK
+YEARS = list(range(START_YEAR, CURRENT_YEAR + 1))
 
 RAW_DIR = Path("data/raw")
 FEATURES_PATH = Path("data/features/highjump_features.parquet")

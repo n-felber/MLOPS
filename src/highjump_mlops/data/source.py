@@ -46,8 +46,8 @@ def find_last_page(html: str) -> int:
 def parse_toplist(html: str, year: int, page: int) -> pd.DataFrame:
     try:
         tables = pd.read_html(StringIO(html))
-    except ValueError:
-        print(f"Could not parse table for {year} page {page}", flush=True)
+    except (ValueError, ImportError) as error:
+        print(f"Could not parse table for {year} page {page}: {error}", flush=True)
         return pd.DataFrame()
 
     if not tables:

@@ -1,13 +1,23 @@
 import random
 import time
+from pathlib import Path
+
 import pandas as pd
 
-from highjump_mlops.config import FEATURES_PATH, RAW_DIR, YEARS
+from highjump_mlops.config import CURRENT_YEAR, FEATURES_PATH, RAW_DIR, YEARS
 from highjump_mlops.data.source import fetch_html, find_last_page, parse_toplist
 from highjump_mlops.features.engineering import build_features
 
 
 PAGE_RETRIES = 4
+
+
+def raw_html_path(year: int, page: int) -> Path:
+    return RAW_DIR / f"world_athletics_toplist_{year}_page_{page}.html"
+
+
+def should_refresh_year(year: int) -> bool:
+    return year == CURRENT_YEAR
 
 
 def wait_before_retry(attempt: int) -> None:
@@ -19,24 +29,104 @@ def wait_before_retry(attempt: int) -> None:
     time.sleep(delay)
 
 
-def fetch_and_parse_page(year: int, page: int) -> pd.DataFrame:
+def load_or_fetch_html(year: int, page: int, force_fetch: bool = False) -> tuple[str, bool]:
+    path = raw_html_path(year, page)
+
+    if path.exists() and not force_fetch:
+        print(f"Using cached HTML for {year} page {page}", flush=True)
+        return path.read_text(encoding="utf-8"), True
+
+    print(f"Fetching {year} page {page}", flush=True)
+    html = fetch_html(year, page)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(html, encoding="utf-8")
+
+    return html, False
+
+
+def load_valid_page(
+    year: int,
+    page: int,
+    force_refresh: bool = False,
+) -> tuple[str, pd.DataFrame]:
     for attempt in range(1, PAGE_RETRIES + 1):
-        html = fetch_html(year, page)
+        force_fetch = force_refresh or attempt > 1
+
+        html, from_cache = load_or_fetch_html(
+            year,
+            page,
+            force_fetch=force_fetch,
+        )
+
         page_results = parse_toplist(html, year, page)
 
         if not page_results.empty:
-            (RAW_DIR / f"world_athletics_toplist_{year}_page_{page}.html").write_text(html)
-            return page_results
+            return html, page_results
 
         if attempt < PAGE_RETRIES:
-            print(
-                f"Retrying {year} page {page}: attempt {attempt}/{PAGE_RETRIES}",
-                flush=True,
-            )
-            wait_before_retry(attempt)
+            if from_cache:
+                print(
+                    f"Cached HTML for {year} page {page} did not contain usable data. "
+                    "Refetching next attempt.",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"Retrying {year} page {page}: attempt {attempt}/{PAGE_RETRIES}",
+                    flush=True,
+                )
+                wait_before_retry(attempt)
 
     print(f"Skipped {year} page {page} after {PAGE_RETRIES} failed attempts", flush=True)
-    return pd.DataFrame()
+    return "", pd.DataFrame()
+
+
+def collect_year(year: int) -> pd.DataFrame:
+    force_refresh = should_refresh_year(year)
+
+    if force_refresh:
+        print(f"Processing year: {year} (refreshing current year)", flush=True)
+    else:
+        print(f"Processing year: {year} (using cache when valid)", flush=True)
+
+    first_html, first_page_results = load_valid_page(
+        year,
+        page=1,
+        force_refresh=force_refresh,
+    )
+
+    if first_page_results.empty:
+        print(f"Skipping {year}: page 1 did not contain usable data", flush=True)
+        return pd.DataFrame()
+
+    last_page = find_last_page(first_html)
+
+    year_results = [first_page_results]
+    year_row_count = len(first_page_results)
+    skipped_pages = 0
+
+    for page in range(2, last_page + 1):
+        _, page_results = load_valid_page(
+            year,
+            page=page,
+            force_refresh=force_refresh,
+        )
+
+        if page_results.empty:
+            skipped_pages += 1
+            continue
+
+        year_results.append(page_results)
+        year_row_count += len(page_results)
+
+    print(
+        f"{year}: collected {year_row_count} rows from {last_page} pages "
+        f"({skipped_pages} skipped)",
+        flush=True,
+    )
+
+    return pd.concat(year_results, ignore_index=True)
 
 
 def main() -> None:
@@ -45,30 +135,18 @@ def main() -> None:
 
     all_results = []
 
+    print(f"Collecting years: {YEARS}", flush=True)
+
     for year in YEARS:
-        print(f"Fetching year: {year}", flush=True)
+        year_results = collect_year(year)
 
-        first_html = fetch_html(year, page=1)
-        last_page = find_last_page(first_html)
+        if year_results.empty:
+            continue
 
-        year_row_count = 0
-        skipped_pages = 0
+        all_results.append(year_results)
 
-        for page in range(1, last_page + 1):
-            page_results = fetch_and_parse_page(year, page)
-
-            if page_results.empty:
-                skipped_pages += 1
-                continue
-
-            all_results.append(page_results)
-            year_row_count += len(page_results)
-
-        print(
-            f"{year}: fetched {year_row_count} rows from {last_page} pages "
-            f"({skipped_pages} skipped)",
-            flush=True,
-        )
+    if not all_results:
+        raise ValueError("No results were collected. Cannot build features.")
 
     results = pd.concat(all_results, ignore_index=True)
     features = build_features(results)
