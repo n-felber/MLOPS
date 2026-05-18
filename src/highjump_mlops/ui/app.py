@@ -65,6 +65,11 @@ except Exception as error:
     st.code(str(error))
     st.stop()
 
+predicted_best = round(float(prediction["prediction_next_season_best"]), 2)
+latest_best = round(float(prediction["latest_season_best"]), 2)
+prediction_delta = predicted_best - latest_best
+
+
 st.markdown("## Prediction")
 
 col1, col2, col3 = st.columns(3)
@@ -72,7 +77,8 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.metric(
         "Predicted next season best",
-        f"{prediction['prediction_next_season_best']:.2f} m",
+        f"{predicted_best:.2f} m",
+        delta=f"{prediction_delta:+.2f} m vs latest",
     )
 
 with col2:
@@ -133,6 +139,7 @@ if not chart_history.empty:
     historical_chart_data = chart_history.rename(
         columns={"season_best": "height"}
     )
+    historical_chart_data["height"] = historical_chart_data["height"].round(2)
     historical_chart_data["series"] = "Historical season best"
 
     latest_actual_row = chart_history.sort_values("year").iloc[-1]
@@ -145,8 +152,8 @@ if not chart_history.empty:
                 predicted_year,
             ],
             "height": [
-                float(latest_actual_row["season_best"]),
-                prediction["prediction_next_season_best"],
+                round(float(latest_actual_row["season_best"]), 2),
+                predicted_best,
             ],
             "series": [
                 "Predicted next season best",

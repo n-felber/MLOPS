@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 
 import pandas as pd
+import requests
 
 from highjump_mlops.config import CURRENT_YEAR, FEATURES_PATH, RAW_DIR, YEARS
 from highjump_mlops.data.source import fetch_html, find_last_page, parse_toplist
@@ -53,11 +54,23 @@ def load_valid_page(
     for attempt in range(1, PAGE_RETRIES + 1):
         force_fetch = force_refresh or attempt > 1
 
-        html, from_cache = load_or_fetch_html(
-            year,
-            page,
-            force_fetch=force_fetch,
-        )
+        try:
+            html, from_cache = load_or_fetch_html(
+                year,
+                page,
+                force_fetch=force_fetch,
+            )
+        except requests.RequestException as error:
+            print(
+                f"Request failed for {year} page {page}: {error}",
+                flush=True,
+            )
+
+            if attempt < PAGE_RETRIES:
+                wait_before_retry(attempt)
+                continue
+
+            break
 
         page_results = parse_toplist(html, year, page)
 
