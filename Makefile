@@ -2,7 +2,7 @@ ATHLETE ?= Mutaz Essa BARSHIM
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build features train inference ui clean
+.PHONY: help build features train inference ui mlflow clean
 
 help:
 	@echo "Available commands:"
@@ -12,6 +12,7 @@ help:
 	@echo "  make inference                     Run CLI inference with default athlete"
 	@echo "  make inference ATHLETE=\"Name\"      Run CLI inference for selected athlete"
 	@echo "  make ui                            Run Streamlit UI"
+	@echo "  make mlflow                       Run local MLflow UI"
 	@echo "  make clean                         Stop containers and remove orphan services"
 
 build:
@@ -28,6 +29,9 @@ inference:
 
 ui:
 	docker compose up ui
+
+mlflow:
+	docker compose up mlflow
 
 clean:
 	docker compose down --remove-orphans
