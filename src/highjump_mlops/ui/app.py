@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
-from highjump_mlops.inference import get_athlete_history, list_predictable_athletes, predict_for_athlete
+from highjump_mlops.inference.service import get_athlete_history, list_predictable_athletes, predict_for_athlete
 
 
 st.set_page_config(

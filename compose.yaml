@@ -22,7 +22,7 @@ services:
       - ./models:/app/models
     environment:
       ATHLETE: ${ATHLETE:-Mutaz Essa BARSHIM}
-    command: sh -c 'python -m highjump_mlops.inference "$$ATHLETE"'
+    command: sh -c 'python -m highjump_mlops.inference.cli "$$ATHLETE"'
 
   ui:
     build: .
@@ -32,4 +32,4 @@ services:
     volumes:
       - ./data:/app/data
       - ./models:/app/models
-    command: streamlit run src/highjump_mlops/app.py --server.address=0.0.0.0 --server.port=8501
+    command: streamlit run src/highjump_mlops/ui/app.py --server.address=0.0.0.0 --server.port=8501

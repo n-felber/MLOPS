@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Any
 
 import joblib
@@ -6,9 +5,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
-
-FEATURES_PATH = Path("data/features/highjump_features.parquet")
-MODEL_PATH = Path("models/highjump_model.joblib")
+from highjump_mlops.config import FEATURES_PATH, MODEL_PATH
 
 FEATURE_COLUMNS = [
     "season_rank",

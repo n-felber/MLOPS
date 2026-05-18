@@ -3,8 +3,8 @@ import time
 import pandas as pd
 
 from highjump_mlops.config import FEATURES_PATH, RAW_DIR, YEARS
-from highjump_mlops.data_source import fetch_html, find_last_page, parse_toplist
-from highjump_mlops.features import build_features
+from highjump_mlops.data.source import fetch_html, find_last_page, parse_toplist
+from highjump_mlops.features.engineering import build_features
 
 
 PAGE_RETRIES = 4
