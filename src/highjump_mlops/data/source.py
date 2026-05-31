@@ -57,12 +57,47 @@ def parse_toplist(html: str, year: int, page: int) -> pd.DataFrame:
     df = tables[0]
     df.columns = [str(column).strip().lower().replace(" ", "_") for column in df.columns]
 
-    df = df[["rank", "mark", "competitor", "date", "results_score"]].copy()
+    expected_columns = [
+        "rank",
+        "mark",
+        "competitor",
+        "dob",
+        "pos",
+        "venue",
+        "date",
+        "results_score",
+    ]
+
+    missing_columns = [column for column in expected_columns if column not in df.columns]
+
+    if missing_columns:
+        print(
+            f"Missing expected columns for {year} page {page}: {missing_columns}",
+            flush=True,
+        )
+        print(f"Available columns: {list(df.columns)}", flush=True)
+        return pd.DataFrame()
+
+    df = df[expected_columns].copy()
     df["year"] = year
+    df["source_page"] = page
 
     df["rank"] = pd.to_numeric(df["rank"], errors="coerce")
     df["mark"] = pd.to_numeric(df["mark"], errors="coerce")
     df["results_score"] = pd.to_numeric(df["results_score"], errors="coerce")
     df["date"] = pd.to_datetime(df["date"], format="%d %b %Y", errors="coerce")
 
-    return df.dropna(subset=["rank", "mark", "competitor", "date", "results_score"])
+    df["competitor"] = df["competitor"].astype(str).str.strip()
+    df["dob"] = df["dob"].astype(str).str.strip()
+    df["pos"] = df["pos"].astype(str).str.strip()
+    df["venue"] = df["venue"].astype(str).str.strip()
+
+    return df.dropna(
+        subset=[
+            "rank",
+            "mark",
+            "competitor",
+            "date",
+            "results_score",
+        ]
+    )

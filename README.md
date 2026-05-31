@@ -2,7 +2,7 @@
 
 This project is a live machine learning system for predicting men's outdoor high jump performance.
 
-The current baseline predicts an athlete's **next season-best height** using dynamic World Athletics season toplist data.
+The current baseline predicts an athlete's **next competition mark** using dynamic World Athletics result data.
 
 ## How to run with Docker
 
@@ -48,17 +48,29 @@ Then open:
 http://localhost:8501
 ```
 
+Run the MLflow UI:
+
+```bash
+make mlflow
+```
+
+Then open:
+
+```text
+http://localhost:5001
+```
+
 ## Architecture
 
 The project follows the FTI architecture:
 
 ```text
-Feature Pipeline -> Parquet Feature Store -> Training Pipeline -> Model Artifact -> Inference/UI
-````
+Feature Pipeline -> Parquet Feature Store -> Training Pipeline -> Model Artifact / MLflow -> Inference/UI
+```
 
 ### Feature Pipeline
 
-The feature pipeline scrapes World Athletics toplist pages, parses the results, builds athlete-level season features, and saves them as a Parquet feature store.
+The feature pipeline scrapes World Athletics toplist pages, parses the results, builds athlete-level competition features, and saves them as a Parquet feature store.
 
 Output:
 
@@ -68,7 +80,7 @@ data/features/highjump_features.parquet
 
 ### Training Pipeline
 
-The training pipeline reads the feature store, trains a regression model, evaluates it with MAE and RMSE, and saves the trained model package.
+The training pipeline reads the feature store, trains a regression model, evaluates it with MAE and RMSE, logs the run to MLflow, and saves the trained model package.
 
 Output:
 
@@ -76,23 +88,30 @@ Output:
 models/highjump_model.joblib
 ```
 
+MLflow outputs:
+
+```text
+mlruns/
+models/latest_mlflow_run.txt
+```
+
 ### Inference/UI
 
-The inference pipeline loads the saved model and latest features, predicts the selected athlete's next season-best height, and serves the result through a Streamlit UI.
+The inference pipeline loads the saved model and latest features, predicts the selected athlete's next competition mark, and serves the result through a Streamlit UI.
 
 
 ## Current scope
 
-The original proposal targeted next-competition prediction. During implementation, detailed per-event attempt data was not yet reliably available from the source, so the current baseline predicts the next season-best height from dynamic World Athletics season toplists. The goal remains to extend the system toward the original proposal once the required data can be accessed and processed reliably.
+The original proposal targeted next-competition prediction. During implementation, detailed per-attempt data was not yet reliably available from the source, so the current baseline predicts the next available competition mark from dynamic World Athletics result data. The goal remains to extend the system toward richer competition-level features once the required data can be accessed and processed reliably.
 
 ## Model evaluation
 
 The Streamlit UI displays:
 
 ```text
-Predicted next season best
-Latest season best
-Latest season rank
+Predicted next competition mark
+Latest competition mark
+Latest result rank
 Recent athlete history
 MAE
 RMSE
@@ -110,3 +129,4 @@ Test rows
 * Streamlit
 * Parquet
 * joblib
+* MLflow

@@ -4,19 +4,44 @@ from typing import Any
 from highjump_mlops.inference.service import get_athlete_history, list_predictable_athletes, predict_for_athlete
 
 
+def format_optional_height(value: float | None) -> str:
+    if value is None:
+        return "N/A"
+
+    return f"{value:.2f} m"
+
+
 def print_prediction(result: dict[str, Any]) -> None:
     print("\nPrediction result:")
     print(f"Athlete: {result['athlete']}")
-    print(f"Latest year: {result['latest_year']}")
-    print(f"Latest season best: {result['latest_season_best']:.2f} m")
+    print(f"Latest competition date: {result['latest_date']}")
+    print(f"Latest venue: {result['latest_venue']}")
+    print(f"Latest competition mark: {result['latest_competition_mark']:.2f} m")
     print(
-        "Predicted next season best: "
-        f"{result['prediction_next_season_best']:.2f} m"
+        "Predicted next competition mark: "
+        f"{result['prediction_next_competition_mark']:.2f} m"
     )
-    print(f"Latest season rank: {result['latest_season_rank']}")
-    print(f"Previous season best: {result['previous_season_best']}")
-    print(f"Performance change: {result['performance_change']}")
-    print(f"Days since season best: {result['days_since_season_best']}")
+    print(f"Latest result rank: {result['latest_result_rank']}")
+    print(
+        "Previous competition mark: "
+        f"{format_optional_height(result['previous_competition_mark'])}"
+    )
+    print(
+        "Recent 3-competition mean: "
+        f"{format_optional_height(result['recent_3_competition_mark_mean'])}"
+    )
+    print(
+        "Recent 5-competition mean: "
+        f"{format_optional_height(result['recent_5_competition_mark_mean'])}"
+    )
+    print(
+        "Performance change from previous: "
+        f"{format_optional_height(result['performance_change_from_previous'])}"
+    )
+    print(
+        "Days since previous competition: "
+        f"{result['days_since_previous_competition']}"
+    )
 
 
 def main() -> None:
@@ -46,7 +71,7 @@ def main() -> None:
     print_prediction(result)
 
     print("\nRecent athlete history:")
-    print(get_athlete_history(athlete).head(5).to_string(index=False))
+    print(get_athlete_history(athlete).head(10).to_string(index=False))
 
 
 if __name__ == "__main__":

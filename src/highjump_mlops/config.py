@@ -15,5 +15,11 @@ MODEL_PATH = Path("models/highjump_model.joblib")
 def toplist_url(year: int, page: int) -> str:
     return (
         "https://worldathletics.org/records/toplists/jumps/high-jump/"
-        f"outdoor/men/senior/{year}?page={page}"
+        f"outdoor/men/senior/{year}"
+        f"?ageCategory=senior"
+        f"&bestResultsOnly=false"
+        f"&eventId=10229615"
+        f"&maxResultsByCountry=all"
+        f"&page={page}"
+        f"&regionType=world"
     )

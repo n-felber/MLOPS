@@ -27,10 +27,24 @@ def cached_history(athlete: str) -> pd.DataFrame:
     return get_athlete_history(athlete)
 
 
+def format_height(value: float | None) -> str:
+    if value is None or pd.isna(value):
+        return "N/A"
+
+    return f"{value:.2f} m"
+
+
+def format_number(value: int | float | None) -> str:
+    if value is None or pd.isna(value):
+        return "N/A"
+
+    return str(int(value))
+
+
 st.title("Men's Outdoor High Jump Prediction")
 st.caption(
-    "Live ML demo predicting an athlete's next season-best height "
-    "from World Athletics season toplist data."
+    "Live ML demo predicting an athlete's next competition mark "
+    "from dynamic World Athletics result data."
 )
 
 st.markdown("## Select athlete")
@@ -65,10 +79,9 @@ except Exception as error:
     st.code(str(error))
     st.stop()
 
-predicted_best = round(float(prediction["prediction_next_season_best"]), 2)
-latest_best = round(float(prediction["latest_season_best"]), 2)
-prediction_delta = predicted_best - latest_best
-
+predicted_mark = round(float(prediction["prediction_next_competition_mark"]), 2)
+latest_mark = round(float(prediction["latest_competition_mark"]), 2)
+prediction_delta = predicted_mark - latest_mark
 
 st.markdown("## Prediction")
 
@@ -76,108 +89,115 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric(
-        "Predicted next season best",
-        f"{predicted_best:.2f} m",
+        "Predicted next competition mark",
+        f"{predicted_mark:.2f} m",
         delta=f"{prediction_delta:+.2f} m vs latest",
     )
 
 with col2:
     st.metric(
-        "Latest season best",
-        f"{prediction['latest_season_best']:.2f} m",
+        "Latest competition mark",
+        f"{latest_mark:.2f} m",
     )
 
 with col3:
     st.metric(
-        "Latest season rank",
-        prediction["latest_season_rank"],
+        "Latest result rank",
+        format_number(prediction["latest_result_rank"]),
     )
 
-st.markdown("## Latest athlete context")
+st.markdown("## Latest and previous competition context")
 
 context_col1, context_col2, context_col3, context_col4 = st.columns(4)
 
 with context_col1:
-    st.metric("Latest year", prediction["latest_year"])
+    st.metric("Latest date", prediction["latest_date"] or "N/A")
 
 with context_col2:
-    previous_best = prediction["previous_season_best"]
     st.metric(
-        "Previous season best",
-        "N/A" if previous_best is None else f"{previous_best:.2f} m",
+        "Previous competition mark",
+        format_height(prediction["previous_competition_mark"]),
     )
 
 with context_col3:
-    performance_change = prediction["performance_change"]
     st.metric(
-        "Performance change",
-        "N/A" if performance_change is None else f"{performance_change:+.2f} m",
+        "Recent 3-competition mean",
+        format_height(prediction["recent_3_competition_mark_mean"]),
     )
 
 with context_col4:
     st.metric(
-        "Days since season best",
-        prediction["days_since_season_best"],
+        "Days since latest competition",
+        format_number(prediction["days_since_latest_competition"]),
     )
 
-st.markdown("## Recent athlete history")
+st.markdown("### Latest venue")
+st.write(prediction["latest_venue"] or "N/A")
+
+st.markdown("## Recent competition history")
 
 display_history = history.copy()
 
-for column in display_history.columns:
-    if display_history[column].dtype == "float64":
-        display_history[column] = display_history[column].round(2)
+if "date" in display_history.columns:
+    display_history["date"] = pd.to_datetime(display_history["date"], errors="coerce")
 
 chart_history = (
-    history[["year", "season_best"]]
+    display_history[["date", "competition_mark"]]
     .dropna()
-    .sort_values("year")
-    .copy()
+    .sort_values("date")
+    .tail(10)
+    .reset_index(drop=True)
 )
 
 if not chart_history.empty:
-    historical_chart_data = chart_history.rename(
-        columns={"season_best": "height"}
-    )
-    historical_chart_data["height"] = historical_chart_data["height"].round(2)
-    historical_chart_data["series"] = "Historical season best"
+    chart_history["order"] = chart_history.index
+    chart_history["label"] = chart_history["date"].dt.strftime("%Y-%m-%d")
+    chart_history["height"] = chart_history["competition_mark"].round(2)
+    chart_history["series"] = "Actual competition mark"
 
-    latest_actual_row = chart_history.sort_values("year").iloc[-1]
-    predicted_year = prediction["latest_year"] + 1
+    latest_chart_row = chart_history.iloc[-1]
 
     prediction_chart_data = pd.DataFrame(
         {
-            "year": [
-                int(latest_actual_row["year"]),
-                predicted_year,
+            "order": [
+                int(latest_chart_row["order"]),
+                int(latest_chart_row["order"]) + 1,
+            ],
+            "label": [
+                str(latest_chart_row["label"]),
+                "Next prediction",
             ],
             "height": [
-                round(float(latest_actual_row["season_best"]), 2),
-                predicted_best,
+                float(latest_chart_row["height"]),
+                predicted_mark,
             ],
             "series": [
-                "Predicted next season best",
-                "Predicted next season best",
+                "Predicted next competition mark",
+                "Predicted next competition mark",
             ],
         }
     )
 
     y_axis = alt.Y(
         "height:Q",
-        title="Season best height (m)",
+        title="Height (m)",
         scale=alt.Scale(zero=False),
     )
 
-    historical_chart = (
-        alt.Chart(historical_chart_data)
+    actual_chart = (
+        alt.Chart(chart_history)
         .mark_line(point=True)
         .encode(
-            x=alt.X("year:O", title="Year"),
+            x=alt.X(
+                "label:N",
+                title="Competition",
+                sort=alt.SortField("order"),
+            ),
             y=y_axis,
             color=alt.Color("series:N", title="Series"),
             tooltip=[
-                alt.Tooltip("year:O", title="Year"),
-                alt.Tooltip("height:Q", title="Season best", format=".2f"),
+                alt.Tooltip("label:N", title="Date"),
+                alt.Tooltip("height:Q", title="Height", format=".2f"),
                 alt.Tooltip("series:N", title="Series"),
             ],
         )
@@ -187,44 +207,57 @@ if not chart_history.empty:
         alt.Chart(prediction_chart_data)
         .mark_line(point=True, strokeDash=[6, 4])
         .encode(
-            x=alt.X("year:O", title="Year"),
+            x=alt.X(
+                "label:N",
+                title="Competition",
+                sort=alt.SortField("order"),
+            ),
             y=y_axis,
             color=alt.Color("series:N", title="Series"),
             tooltip=[
-                alt.Tooltip("year:O", title="Year"),
+                alt.Tooltip("label:N", title="Date"),
                 alt.Tooltip("height:Q", title="Height", format=".2f"),
                 alt.Tooltip("series:N", title="Series"),
             ],
         )
     )
 
-    chart = (historical_chart + prediction_chart).properties(height=350)
+    chart = (actual_chart + prediction_chart).properties(height=350)
 
     st.altair_chart(chart, width="stretch")
 
     st.caption(
-        "Solid line: historical season-best heights. "
-        "Dashed segment: model prediction for the next season."
+        "Solid line: recent actual competition marks. "
+        "Dashed segment: model prediction for the next competition."
     )
 
-display_history = display_history.rename(
+table_history = display_history.copy()
+
+for column in table_history.columns:
+    if pd.api.types.is_float_dtype(table_history[column]):
+        table_history[column] = table_history[column].round(2)
+
+table_history = table_history.rename(
     columns={
-        "year": "Year",
-        "season_rank": "Season rank",
-        "season_best": "Season best (m)",
-        "previous_season_best": "Previous season best (m)",
-        "recent_3_season_best_mean": "Recent 3-season mean (m)",
-        "performance_change": "Performance change (m)",
-        "days_since_season_best": "Days since season best",
+        "date": "Date",
+        "venue": "Venue",
+        "competition_mark": "Competition mark (m)",
+        "result_rank": "Result rank",
+        "previous_competition_mark": "Previous mark (m)",
+        "recent_3_competition_mark_mean": "Recent 3-competition mean (m)",
+        "recent_5_competition_mark_mean": "Recent 5-competition mean (m)",
+        "performance_change_from_previous": "Change from previous (m)",
+        "days_since_previous_competition": "Days since previous",
+        "season_best_so_far": "Season best so far (m)",
+        "target_next_competition_mark": "Actual next competition mark (m)",
     }
 )
 
 st.dataframe(
-    display_history,
+    table_history,
     width="stretch",
     hide_index=True,
 )
-
 
 st.markdown("## Model evaluation")
 
@@ -247,3 +280,8 @@ with metric_col3:
 with metric_col4:
     test_rows = metrics.get("test_rows")
     st.metric("Test rows", "N/A" if test_rows is None else test_rows)
+
+st.caption(
+    "Target: next competition mark. "
+    "The model predicts the height an athlete may clear in his next available competition result."
+)

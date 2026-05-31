@@ -13,10 +13,15 @@ def load_features(features_path: Path = FEATURES_PATH) -> pd.DataFrame:
         raise FileNotFoundError(
             f"Feature file not found: {features_path}. "
             "Run the feature pipeline inside Docker first:\n\n"
-            'docker run --rm -v "$PWD/data:/app/data" highjump-mlops feature-pipeline'
+            "make features"
         )
 
-    return pd.read_parquet(features_path)
+    df = pd.read_parquet(features_path)
+
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+
+    return df
 
 
 def load_model_package(model_path: Path = MODEL_PATH) -> dict[str, Any]:
@@ -24,8 +29,7 @@ def load_model_package(model_path: Path = MODEL_PATH) -> dict[str, Any]:
         raise FileNotFoundError(
             f"Model file not found: {model_path}. "
             "Run the training pipeline inside Docker first:\n\n"
-            'docker run --rm -v "$PWD/data:/app/data" -v "$PWD/models:/app/models" '
-            "highjump-mlops train-pipeline"
+            "make train"
         )
 
     package = joblib.load(model_path)
@@ -60,6 +64,11 @@ def list_predictable_athletes(features_path: Path = FEATURES_PATH, model_path: P
     package = load_model_package(model_path)
     feature_columns = package["feature_columns"]
 
+    missing_columns = [column for column in feature_columns if column not in df.columns]
+
+    if missing_columns:
+        raise ValueError(f"Missing feature columns in data: {missing_columns}")
+
     usable_df = df.dropna(subset=feature_columns)
 
     return (
@@ -81,22 +90,47 @@ def get_athlete_history(athlete: str, features_path: Path = FEATURES_PATH) -> pd
         raise ValueError(f"No rows found for athlete: {athlete}")
 
     history_columns = [
-        "year",
-        "season_rank",
-        "season_best",
-        "previous_season_best",
-        "recent_3_season_best_mean",
-        "performance_change",
-        "days_since_season_best",
+        "date",
+        "venue",
+        "competition_mark",
+        "result_rank",
+        "previous_competition_mark",
+        "recent_3_competition_mark_mean",
+        "recent_5_competition_mark_mean",
+        "performance_change_from_previous",
+        "days_since_previous_competition",
+        "season_best_so_far",
+        "target_next_competition_mark",
     ]
 
     existing_columns = [col for col in history_columns if col in athlete_rows.columns]
 
     return (
         athlete_rows[existing_columns]
-        .sort_values("year", ascending=False)
+        .sort_values("date", ascending=False)
         .reset_index(drop=True)
     )
+
+
+def optional_float(value: Any) -> float | None:
+    if pd.isna(value):
+        return None
+
+    return float(value)
+
+
+def optional_int(value: Any) -> int | None:
+    if pd.isna(value):
+        return None
+
+    return int(value)
+
+
+def optional_str(value: Any) -> str | None:
+    if pd.isna(value):
+        return None
+
+    return str(value)
 
 
 def predict_for_athlete(athlete: str, features_path: Path = FEATURES_PATH, model_path: Path = MODEL_PATH) -> dict[str, Any]:
@@ -120,30 +154,49 @@ def predict_for_athlete(athlete: str, features_path: Path = FEATURES_PATH, model
     if usable_rows.empty:
         raise ValueError(
             f"No usable feature rows found for athlete: {athlete}. "
-            "The athlete may not have enough previous seasons for prediction."
+            "The athlete may not have enough previous competitions for prediction."
         )
 
-    latest_row = usable_rows.sort_values("year").iloc[-1]
+    latest_row = usable_rows.sort_values("date").iloc[-1]
 
     x = latest_row[feature_columns].to_frame().T
     prediction = float(model.predict(x)[0])
 
+    latest_date = pd.to_datetime(latest_row["date"], errors="coerce")
+    
+    today = pd.Timestamp.today().normalize()
+    days_since_latest_competition = (
+        None if pd.isna(latest_date) else int((today - latest_date).days)
+    )
+
     return {
         "athlete": athlete,
-        "prediction_next_season_best": prediction,
-        "latest_year": int(latest_row["year"]),
-        "latest_season_best": float(latest_row["season_best"]),
-        "latest_season_rank": int(latest_row["season_rank"]),
-        "previous_season_best": (
-            None
-            if pd.isna(latest_row["previous_season_best"])
-            else float(latest_row["previous_season_best"])
+        "prediction_next_competition_mark": prediction,
+        "latest_date": None if pd.isna(latest_date) else latest_date.date().isoformat(),
+        "latest_venue": optional_str(latest_row.get("venue")),
+        "latest_competition_mark": float(latest_row["competition_mark"]),
+        "latest_result_rank": optional_int(latest_row.get("result_rank")),
+        "previous_competition_mark": optional_float(
+            latest_row.get("previous_competition_mark")
         ),
-        "performance_change": (
-            None
-            if pd.isna(latest_row["performance_change"])
-            else float(latest_row["performance_change"])
+        "recent_3_competition_mark_mean": optional_float(
+            latest_row.get("recent_3_competition_mark_mean")
         ),
-        "days_since_season_best": int(latest_row["days_since_season_best"]),
+        "recent_5_competition_mark_mean": optional_float(
+            latest_row.get("recent_5_competition_mark_mean")
+        ),
+        "performance_change_from_previous": optional_float(
+            latest_row.get("performance_change_from_previous")
+        ),
+        "days_since_previous_competition": optional_int(
+            latest_row.get("days_since_previous_competition")
+        ),
+        "season_best_so_far": optional_float(
+            latest_row.get("season_best_so_far")
+        ),
+        "season_result_count_so_far": optional_int(
+            latest_row.get("season_result_count_so_far")
+        ),
         "metrics": package.get("metrics", {}),
+        "days_since_latest_competition": days_since_latest_competition,
     }
