@@ -172,6 +172,8 @@ def predict_for_athlete(athlete: str, features_path: Path = FEATURES_PATH, model
     return {
         "athlete": athlete,
         "prediction_next_competition_mark": prediction,
+        "model_name": package.get("model_name"),
+        "model_type": package.get("model_type"),
         "latest_date": None if pd.isna(latest_date) else latest_date.date().isoformat(),
         "latest_venue": optional_str(latest_row.get("venue")),
         "latest_competition_mark": float(latest_row["competition_mark"]),

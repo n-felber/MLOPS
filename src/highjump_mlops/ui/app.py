@@ -263,15 +263,26 @@ st.markdown("## Model evaluation")
 
 metrics = prediction.get("metrics", {})
 
+model_name = prediction.get("model_name") or metrics.get("model_name") or "N/A"
+model_type = prediction.get("model_type") or metrics.get("model_type") or "N/A"
+
+model_col1, model_col2 = st.columns(2)
+
+with model_col1:
+    st.metric("Deployed model", model_name)
+
+with model_col2:
+    st.metric("Model type", model_type)
+
 metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
 
 with metric_col1:
     mae = metrics.get("mae")
-    st.metric("MAE", "N/A" if mae is None else f"{mae:.3f} m")
+    st.metric("MAE", "N/A" if mae is None else f"{mae:.4f} m")
 
 with metric_col2:
     rmse = metrics.get("rmse")
-    st.metric("RMSE", "N/A" if rmse is None else f"{rmse:.3f} m")
+    st.metric("RMSE", "N/A" if rmse is None else f"{rmse:.4f} m")
 
 with metric_col3:
     training_rows = metrics.get("training_rows")
