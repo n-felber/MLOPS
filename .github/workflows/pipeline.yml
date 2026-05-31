@@ -1,0 +1,52 @@
+name: Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1"
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Restore raw data cache
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: world-athletics-raw-${{ runner.os }}-${{ github.run_number }}
+          restore-keys: |
+            world-athletics-raw-${{ runner.os }}-
+
+      - name: Build Docker image
+        run: make build
+
+      - name: Fetch raw data
+        run: make fetch
+
+      - name: Build features
+        run: make features
+
+      - name: Train model
+        run: make train
+
+      - name: Run inference smoke test
+        run: make inference
+
+      - name: Upload pipeline outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: highjump-pipeline-outputs-${{ github.run_number }}
+          path: |
+            models/highjump_model.joblib
+            models/latest_mlflow_run.txt
+            mlruns/
+            data/features/highjump_features.parquet
+          if-no-files-found: error
+          retention-days: 14
