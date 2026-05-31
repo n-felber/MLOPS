@@ -1,4 +1,11 @@
 services:
+  fetch:
+    build: .
+    image: highjump-mlops
+    volumes:
+      - ./data:/app/data
+    command: fetch-data
+
   features:
     build: .
     image: highjump-mlops

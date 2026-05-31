@@ -8,6 +8,7 @@ START_YEAR = CURRENT_YEAR - YEARS_BACK
 YEARS = list(range(START_YEAR, CURRENT_YEAR + 1))
 
 RAW_DIR = Path("data/raw")
+RAW_RESULTS_PATH = RAW_DIR / "highjump_results.parquet"
 FEATURES_PATH = Path("data/features/highjump_features.parquet")
 MODEL_PATH = Path("models/highjump_model.joblib")
 

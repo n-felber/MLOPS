@@ -12,7 +12,13 @@ Build the Docker image:
 make build
 ```
 
-Run the feature pipeline:
+Fetch raw World Athletics data:
+
+```bash
+make fetch
+```
+
+Calculate features from the raw data:
 
 ```bash
 make features
@@ -65,12 +71,22 @@ http://localhost:5001
 The project follows the FTI architecture:
 
 ```text
-Feature Pipeline -> Parquet Feature Store -> Training Pipeline -> Model Artifact / MLflow -> Inference/UI
+Data Fetch -> Raw Results -> Feature Pipeline -> Parquet Feature Store -> Training Pipeline -> Model Artifact / MLflow -> Inference/UI
+```
+
+### Data Fetch
+
+The data fetch command scrapes World Athletics toplist pages, parses the results, and saves the raw result table.
+
+Output:
+
+```text
+data/raw/highjump_results.parquet
 ```
 
 ### Feature Pipeline
 
-The feature pipeline scrapes World Athletics toplist pages, parses the results, builds athlete-level competition features, and saves them as a Parquet feature store.
+The feature pipeline reads the raw result table, builds athlete-level competition features, and saves them as a Parquet feature store.
 
 Output:
 

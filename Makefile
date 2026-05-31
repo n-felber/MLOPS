@@ -2,12 +2,13 @@ ATHLETE ?= Mutaz Essa BARSHIM
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build features train inference ui mlflow clean
+.PHONY: help build fetch features train inference ui mlflow clean
 
 help:
 	@echo "Available commands:"
 	@echo "  make build                         Build Docker image"
-	@echo "  make features                      Run feature pipeline"
+	@echo "  make fetch                         Fetch raw World Athletics data"
+	@echo "  make features                      Calculate features from raw data"
 	@echo "  make train                         Run training pipeline"
 	@echo "  make inference                     Run CLI inference with default athlete"
 	@echo "  make inference ATHLETE=\"Name\"      Run CLI inference for selected athlete"
@@ -17,6 +18,9 @@ help:
 
 build:
 	docker compose build
+
+fetch:
+	docker compose run --rm fetch
 
 features:
 	docker compose run --rm features

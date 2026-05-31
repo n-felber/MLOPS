@@ -22,7 +22,8 @@ dependencies = [
 
 [project.scripts]
 highjump-mlops = "highjump_mlops:main"
-feature-pipeline = "highjump_mlops.data.collection:main"
+fetch-data = "highjump_mlops.data.collection:main"
+feature-pipeline = "highjump_mlops.features.pipeline:main"
 train-pipeline = "highjump_mlops.training.pipeline:main"
 inference = "highjump_mlops.inference.cli:main"
 
