@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "google-cloud-storage>=3.1.0",
     "joblib>=1.5.3",
     "lxml>=6.1.0",
     "mlflow>=1.27.0",
@@ -26,6 +27,8 @@ fetch-data = "highjump_mlops.data.collection:main"
 feature-pipeline = "highjump_mlops.features.pipeline:main"
 train-pipeline = "highjump_mlops.training.pipeline:main"
 inference = "highjump_mlops.inference.cli:main"
+upload-cloud-artifacts = "highjump_mlops.cloud.artifacts:upload_artifacts_cli"
+download-cloud-artifacts = "highjump_mlops.cloud.artifacts:download_artifacts_cli"
 
 [build-system]
 requires = ["uv_build>=0.11.7,<0.12.0"]

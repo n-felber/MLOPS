@@ -2,7 +2,7 @@ ATHLETE ?= Mutaz Essa BARSHIM
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build fetch features train inference ui mlflow clean
+.PHONY: help build fetch features train inference ui mlflow upload-cloud-artifacts download-cloud-artifacts clean
 
 help:
 	@echo "Available commands:"
@@ -14,6 +14,8 @@ help:
 	@echo "  make inference ATHLETE=\"Name\"      Run CLI inference for selected athlete"
 	@echo "  make ui                            Run Streamlit UI"
 	@echo "  make mlflow                       Run local MLflow UI"
+	@echo "  make upload-cloud-artifacts        Upload model/features to GCS"
+	@echo "  make download-cloud-artifacts      Download model/features from GCS"
 	@echo "  make clean                         Stop containers and remove orphan services"
 
 build:
@@ -36,6 +38,12 @@ ui:
 
 mlflow:
 	docker compose up mlflow
+
+upload-cloud-artifacts:
+	docker compose run --rm train upload-cloud-artifacts
+
+download-cloud-artifacts:
+	docker compose run --rm train download-cloud-artifacts
 
 clean:
 	docker compose down --remove-orphans

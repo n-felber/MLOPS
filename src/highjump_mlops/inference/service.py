@@ -5,10 +5,13 @@ import joblib
 import pandas as pd
 
 from highjump_mlops.config import FEATURES_PATH, MODEL_PATH
+from highjump_mlops.cloud.artifacts import ensure_cloud_artifacts_available
 
 
 
 def load_features(features_path: Path = FEATURES_PATH) -> pd.DataFrame:
+    ensure_cloud_artifacts_available()
+
     if not features_path.exists():
         raise FileNotFoundError(
             f"Feature file not found: {features_path}. "
@@ -25,6 +28,8 @@ def load_features(features_path: Path = FEATURES_PATH) -> pd.DataFrame:
 
 
 def load_model_package(model_path: Path = MODEL_PATH) -> dict[str, Any]:
+    ensure_cloud_artifacts_available()
+
     if not model_path.exists():
         raise FileNotFoundError(
             f"Model file not found: {model_path}. "

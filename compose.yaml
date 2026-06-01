@@ -20,6 +20,14 @@ services:
       - ./data:/app/data
       - ./models:/app/models
       - ./mlruns:/app/mlruns
+      - ~/.config/gcloud:/root/.config/gcloud:ro
+    env_file:
+      - .env
+    environment:
+      GOOGLE_CLOUD_PROJECT: ${PROJECT_ID}
+      GCLOUD_PROJECT: ${PROJECT_ID}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME}
+      GCS_ARTIFACT_PREFIX: ${GCS_ARTIFACT_PREFIX:-latest}
     command: train-pipeline
 
   inference:
@@ -28,8 +36,15 @@ services:
     volumes:
       - ./data:/app/data
       - ./models:/app/models
+      - ~/.config/gcloud:/root/.config/gcloud:ro
+    env_file:
+      - .env
     environment:
       ATHLETE: ${ATHLETE:-Mutaz Essa BARSHIM}
+      GOOGLE_CLOUD_PROJECT: ${PROJECT_ID}
+      GCLOUD_PROJECT: ${PROJECT_ID}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME}
+      GCS_ARTIFACT_PREFIX: ${GCS_ARTIFACT_PREFIX:-latest}
     command: sh -c 'python -m highjump_mlops.inference.cli "$$ATHLETE"'
 
   ui:
@@ -40,6 +55,14 @@ services:
     volumes:
       - ./data:/app/data
       - ./models:/app/models
+      - ~/.config/gcloud:/root/.config/gcloud:ro
+    env_file:
+      - .env
+    environment:
+      GOOGLE_CLOUD_PROJECT: ${PROJECT_ID}
+      GCLOUD_PROJECT: ${PROJECT_ID}
+      GCS_BUCKET_NAME: ${GCS_BUCKET_NAME}
+      GCS_ARTIFACT_PREFIX: ${GCS_ARTIFACT_PREFIX:-latest}
     command: streamlit run src/highjump_mlops/ui/app.py --server.address=0.0.0.0 --server.port=8501
 
   mlflow:

@@ -5,3 +5,6 @@ __pycache__/
 /data/
 /models/
 mlruns/
+.env
+github-actions-key.json
+gha-creds-*.json
