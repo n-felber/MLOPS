@@ -78,11 +78,20 @@ jobs:
 
       - name: Upload cloud artifacts to GCS
         run: |
+          FEATURE_VERSION_ID="$(python -c 'import json; print(json.load(open("data/features/latest_feature_version.json"))["version_id"])')"
+          FEATURE_VERSIONED_PATH="$(python -c 'import json; print(json.load(open("data/features/latest_feature_version.json"))["versioned_path"])')"
+
           gcloud storage cp data/raw/highjump_results.parquet \
             "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/data/raw/highjump_results.parquet"
 
           gcloud storage cp data/features/highjump_features.parquet \
             "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/data/features/highjump_features.parquet"
+
+          gcloud storage cp data/features/latest_feature_version.json \
+            "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/data/features/latest_feature_version.json"
+
+          gcloud storage cp "${FEATURE_VERSIONED_PATH}" \
+            "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/data/features/versions/${FEATURE_VERSION_ID}/highjump_features.parquet"
 
           gcloud storage cp models/highjump_model.joblib \
             "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/models/highjump_model.joblib"
@@ -92,8 +101,12 @@ jobs:
 
       - name: Verify cloud artifacts
         run: |
+          FEATURE_VERSION_ID="$(python -c 'import json; print(json.load(open("data/features/latest_feature_version.json"))["version_id"])')"
+
           gcloud storage ls "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/data/raw/highjump_results.parquet"
           gcloud storage ls "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/data/features/highjump_features.parquet"
+          gcloud storage ls "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/data/features/latest_feature_version.json"
+          gcloud storage ls "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/data/features/versions/${FEATURE_VERSION_ID}/highjump_features.parquet"
           gcloud storage ls "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/models/highjump_model.joblib"
           gcloud storage ls "gs://${{ secrets.GCS_BUCKET_NAME }}/${GCS_ARTIFACT_PREFIX}/models/latest_mlflow_run.txt"
 
