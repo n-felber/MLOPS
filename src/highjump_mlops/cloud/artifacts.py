@@ -15,12 +15,12 @@ ARTIFACTS: dict[str, Path] = {
     "models/latest_mlflow_run.txt": MODEL_PATH.parent / "latest_mlflow_run.txt",
 }
 
-REQUIRED_INFERENCE_ARTIFACTS = [
+REQUIRED_INFERENCE_ARTIFACTS: list[str] = [
     "data/features/highjump_features.parquet",
     "models/highjump_model.joblib",
 ]
 
-_download_done = False
+_download_done: bool = False
 
 
 def get_bucket_name() -> str | None:

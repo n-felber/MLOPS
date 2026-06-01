@@ -179,7 +179,7 @@ def collect_year(year: int) -> pd.DataFrame:
 def main() -> None:
     setup_logging()
 
-    all_results = []
+    all_results: list[pd.DataFrame] = []
 
     print(f"Collecting years: {YEARS}", flush=True)
     print(f"Detailed fetch log: {FETCH_LOG_PATH}", flush=True)

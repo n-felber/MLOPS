@@ -2,8 +2,6 @@ from numbers import Number
 from typing import Any
 
 import joblib
-import mlflow
-import mlflow.sklearn
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -12,7 +10,7 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 from highjump_mlops.config import FEATURES_PATH, MODEL_PATH
 
 
-FEATURE_COLUMNS = [
+FEATURE_COLUMNS: list[str] = [
     "competition_year",
     "result_rank",
     "competition_mark",
@@ -31,12 +29,12 @@ FEATURE_COLUMNS = [
     "season_best_so_far",
 ]
 
-TARGET_COLUMN = "target_next_competition_mark"
+TARGET_COLUMN: str = "target_next_competition_mark"
 
-MLFLOW_TRACKING_URI = "file:mlruns"
-MLFLOW_EXPERIMENT_NAME = "highjump-mlops"
+MLFLOW_TRACKING_URI: str = "file:mlruns"
+MLFLOW_EXPERIMENT_NAME: str = "highjump-mlops"
 
-TEST_SIZE = 0.2
+TEST_SIZE: float = 0.2
 
 
 def load_training_data() -> pd.DataFrame:
@@ -171,6 +169,9 @@ def save_model(model: Any, metrics: dict[str, Any]) -> None:
 
 
 def log_to_mlflow(model: Any, metrics: dict[str, Any], is_deployed: bool) -> str:
+    import mlflow
+    import mlflow.sklearn
+
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
 
@@ -237,7 +238,7 @@ def main() -> None:
     df = load_training_data()
     train_df, test_df, cutoff_date = split_train_test_by_time(df)
 
-    trained_models = []
+    trained_models: list[dict[str, Any]] = []
 
     for model_name, candidate_model in get_candidate_models().items():
         model, metrics = train_model(

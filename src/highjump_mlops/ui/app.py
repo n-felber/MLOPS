@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
+from typing import Any
 
 from highjump_mlops.inference.service import get_athlete_history, list_predictable_athletes, predict_for_athlete
 
@@ -18,7 +19,7 @@ def cached_predictable_athletes() -> list[str]:
 
 
 @st.cache_data
-def cached_prediction(athlete: str) -> dict:
+def cached_prediction(athlete: str) -> dict[str, Any]:
     return predict_for_athlete(athlete)
 
 
